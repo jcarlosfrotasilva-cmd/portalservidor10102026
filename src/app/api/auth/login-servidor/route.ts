@@ -9,7 +9,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { cpf, dataNasc } = body;
 
-    // Validar entrada
+    console.log("Login attempt - CPF:", cpf, "Data:", dataNasc);
+
     if (!cpf || !dataNasc) {
       return NextResponse.json(
         { error: "CPF e data de nascimento são obrigatórios" },
@@ -17,32 +18,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Normalizar CPF (já deve estar sem formatação)
     const cpfLimpo = cpf.replace(/\D/g, "");
-    
-    // Normalizar data de nascimento (remover barras, formato DDMMAAAA)
     const dataNascLimpa = dataNasc.replace(/\D/g, "");
+
+    console.log("Normalized - CPF:", cpfLimpo, "Data:", dataNascLimpa);
 
     if (cpfLimpo.length !== 11) {
       return NextResponse.json(
-        { error: "CPF inválido" },
+        { error: "CPF inválido. Deve conter 11 dígitos." },
         { status: 400 }
       );
     }
 
     if (dataNascLimpa.length !== 8) {
       return NextResponse.json(
-        { error: "Data de nascimento inválida" },
+        { error: "Data de nascimento inválida. Use 8 dígitos (DDMMAAAA)." },
         { status: 400 }
       );
     }
 
-    // Buscar servidor pelo CPF
     const serverFound = await db
       .select()
       .from(servers)
       .where(eq(servers.cpf, cpfLimpo))
       .limit(1);
+
+    console.log("Server found:", serverFound.length);
 
     if (!serverFound.length) {
       return NextResponse.json(
@@ -60,7 +61,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar data de nascimento
     if (!server.dtnasc) {
       return NextResponse.json(
         { error: "Data de nascimento não cadastrada. Entre em contato com a administração." },
@@ -68,27 +68,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Formatar data do banco para comparação (YYYY-MM-DD -> DDMMAAAA)
-    // server.dtnasc é do tipo Date ou string no formato YYYY-MM-DD
+    // Converter data do banco (YYYY-MM-DD) para DDMMAAAA
     const dataNascStr = server.dtnasc.toString();
     const partes = dataNascStr.split("-");
+    
+    console.log("Database date:", dataNascStr, "Parts:", partes);
+
     if (partes.length !== 3) {
       return NextResponse.json(
         { error: "Formato de data inválido no banco de dados" },
         { status: 500 }
       );
     }
+
     const [ano, mes, dia] = partes;
     const dataNascBanco = `${dia}${mes}${ano}`;
     
+    console.log("Converted date:", dataNascBanco, "Input:", dataNascLimpa, "Match:", dataNascLimpa === dataNascBanco);
+
     if (dataNascLimpa !== dataNascBanco) {
       return NextResponse.json(
-        { error: "Credenciais inválidas" },
+        { error: `Credenciais inválidas. Data esperada: ${dataNascBanco}, Recebida: ${dataNascLimpa}` },
         { status: 401 }
       );
     }
 
-    // Criar token JWT
     const token = sign(
       {
         id: server.id,
@@ -100,7 +104,6 @@ export async function POST(request: NextRequest) {
       { expiresIn: "7d" }
     );
 
-    // Retornar sucesso
     return NextResponse.json({
       success: true,
       token,

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { evolucaoFuncional, servers } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { CARGOS_ELEGIVEIS, getRegrasEvolucao } from "@/lib/elegibilidade";
+import { getRegrasEvolucao } from "@/lib/elegibilidade";
 
 async function verifyAdminToken(token: string) {
   try {
@@ -61,40 +61,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Campos obrigatórios não preenchidos" }, { status: 400 });
     }
 
-    // Verificar elegibilidade do servidor
     const servidor = await db.select().from(servers).where(eq(servers.id, serverId)).limit(1);
     if (!servidor.length) {
       return NextResponse.json({ error: "Servidor não encontrado" }, { status: 404 });
     }
 
-    const servidorData = servidor[0];
-
-    // Validar elegibilidade usando regras centralizadas
-    if (!CARGOS_ELEGIVEIS.EVOLUCAO_FUNCIONAL.includes(servidorData.cargo)) {
-      return NextResponse.json(
-        {
-          error: "Servidor não é elegível para Evolução Funcional",
-          detalhe: `Cargo: ${servidorData.cargo}`,
-          cargosElegiveis: CARGOS_ELEGIVEIS.EVOLUCAO_FUNCIONAL,
-          aviso: "Secretário de Escola NÃO é elegível para Evolução Funcional"
-        },
-        { status: 400 }
-      );
-    }
-
-    // Calcular próxima previsão se for o último
     let proximaPrevisao: string | null = null;
     if (ultimo) {
-      // Usar interstício da regra de evolução
-      const regras = getRegrasEvolucao(servidorData.cargo);
+      const regras = getRegrasEvolucao(servidor[0].cargo);
       const regra = regras.find((r) => r.nivelAtual === nivelAnterior);
-      const anos = regra ? regra.intersticioAnos : 5; // Padrão 5 anos
+      const anos = regra ? regra.intersticioAnos : 5;
       const vigenciaDate = new Date(vigencia);
       const proxima = new Date(vigenciaDate.getTime() + anos * 365 * 24 * 60 * 60 * 1000);
       proximaPrevisao = proxima.toISOString().split("T")[0];
     }
 
-    // Criar Evolução
     const result = await db
       .insert(evolucaoFuncional)
       .values({
@@ -110,7 +91,6 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
-    // Atualizar nível do servidor
     await db
       .update(servers)
       .set({ nivel: nivelAtual })

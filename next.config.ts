@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
         hostname: "**",
       },
     ],
+    unoptimized: true, // Para imagens locais em produção
   },
 };
 
