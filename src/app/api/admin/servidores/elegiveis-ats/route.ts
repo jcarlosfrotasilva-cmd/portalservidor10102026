@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { servers } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { CARGOS_ELEGIVEIS, CATEGORIAS_ELEGIVEIS } from "@/lib/elegibilidade";
 
 async function verifyAdminToken(token: string) {
   try {
@@ -20,7 +19,7 @@ export async function GET(request: NextRequest) {
     if (!token) return NextResponse.json({ error: "Token necessário" }, { status: 401 });
     if (!(await verifyAdminToken(token))) return NextResponse.json({ error: "Token inválido" }, { status: 401 });
 
-    // Buscar todos os servidores ativos
+    // RETORNAR TODOS OS SERVIDORES ATIVOS - SEM RESTRIÇÕES
     const todosServidores = await db
       .select({
         id: servers.id,
@@ -32,19 +31,9 @@ export async function GET(request: NextRequest) {
       .from(servers)
       .where(eq(servers.active, true));
 
-    // Filtrar usando regras atualizadas
-    // ATS: AOE, Secretário, PEB I, PEB II, Diretor | A-EFETIVO, ACT-F
-    const servidoresElegiveis = todosServidores.filter(
-      (s) =>
-        s.cargo &&
-        s.categoria &&
-        CARGOS_ELEGIVEIS.ATS.includes(s.cargo) &&
-        CATEGORIAS_ELEGIVEIS.ATS.includes(s.categoria)
-    );
-
-    return NextResponse.json({ servidores: servidoresElegiveis });
+    return NextResponse.json({ servidores: todosServidores });
   } catch (error) {
-    console.error("Erro ao buscar servidores elegíveis:", error);
+    console.error("Erro ao buscar servidores:", error);
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { CARGOS_ELEGIVEIS, CATEGORIAS_ELEGIVEIS } from "@/lib/elegibilidade";
 
 interface Servidor {
   id: string;
@@ -24,7 +23,7 @@ export default function AtsModal({ servidores, onClose, onSave }: AtsModalProps)
   const [doe, setDoe] = useState("");
   const [ato, setAto] = useState("");
   const [ultimo, setUltimo] = useState(true);
-  const [continuar, setContinuar] = useState(false); // Checkbox para continuar cadastrando
+  const [continuar, setContinuar] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [token] = useState(() => localStorage.getItem("admin_token") || "");
@@ -33,13 +32,6 @@ export default function AtsModal({ servidores, onClose, onSave }: AtsModalProps)
     "1º ATS", "2º ATS", "3º ATS", "4º ATS", "5º ATS",
     "6º ATS", "7º ATS", "8º ATS", "9º ATS", "10º ATS"
   ];
-
-  const isServidorElegivel = (servidor: Servidor) => {
-    return (
-      CARGOS_ELEGIVEIS.ATS.includes(servidor.cargo) &&
-      CATEGORIAS_ELEGIVEIS.ATS.includes(servidor.categoria || "")
-    );
-  };
 
   const formatDataInput = (dateStr: string) => {
     const parts = dateStr.replace(/\D/g, "").match(/(\d{2})(\d{2})(\d{4})/);
@@ -106,14 +98,12 @@ export default function AtsModal({ servidores, onClose, onSave }: AtsModalProps)
         throw new Error(data.error || "Falha ao salvar ATS");
       }
 
-      // Se continuar estiver marcado, limpar formulário e manter modal aberto
       if (continuar) {
         resetForm();
         setLoading(false);
         return;
       }
 
-      // Caso contrário, fechar modal
       onSave();
     } catch (err: any) {
       setError(err.message || "Erro ao salvar ATS");
@@ -124,7 +114,6 @@ export default function AtsModal({ servidores, onClose, onSave }: AtsModalProps)
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        {/* Cabeçalho */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Novo Registro de ATS</h2>
@@ -134,17 +123,13 @@ export default function AtsModal({ servidores, onClose, onSave }: AtsModalProps)
               </p>
             )}
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
             <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        {/* Formulário */}
         <form onSubmit={handleSubmit} className="p-6">
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -153,49 +138,35 @@ export default function AtsModal({ servidores, onClose, onSave }: AtsModalProps)
           )}
 
           <div className="space-y-6">
-            {/* Selecionar Servidor */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Servidor *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Servidor *</label>
               <select
                 value={selectedServidor?.id || ""}
                 onChange={(e) => {
                   const servidor = servidores.find((s) => s.id === e.target.value) || null;
                   setSelectedServidor(servidor);
                 }}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 outline-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 outline-none"
                 required
               >
                 <option value="">Selecione um servidor</option>
-                {servidores
-                  .filter(isServidorElegivel)
-                  .map((servidor) => (
-                    <option key={servidor.id} value={servidor.id}>
-                      {servidor.nome} - {servidor.cargo} ({servidor.categoria})
-                    </option>
-                  ))}
+                {servidores.map((servidor) => (
+                  <option key={servidor.id} value={servidor.id}>
+                    {servidor.nome} - {servidor.cargo} ({servidor.categoria})
+                  </option>
+                ))}
               </select>
               <p className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-xs font-semibold text-green-900 mb-1">Regra de Elegibilidade ATS:</p>
-                <p className="text-xs text-green-800">
-                  <strong>Cargos:</strong> AOE, Secretário de Escola, PEB I, PEB II, Diretor de Escola
-                </p>
-                <p className="text-xs text-green-800">
-                  <strong>Categorias:</strong> A-EFETIVO, ACT-F
-                </p>
+                <p className="text-xs font-semibold text-green-900">✅ TODOS os servidores são elegíveis para ATS</p>
               </p>
             </div>
 
-            {/* Tipo */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tipo *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tipo *</label>
               <select
                 value={tipo}
                 onChange={(e) => setTipo(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 outline-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 outline-none"
                 required
               >
                 {tipos.map((t) => (
@@ -204,61 +175,39 @@ export default function AtsModal({ servidores, onClose, onSave }: AtsModalProps)
               </select>
             </div>
 
-            {/* Data de Vigência */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Data de Vigência *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Data de Vigência *</label>
               <input
-                type="text"
-                inputMode="numeric"
-                placeholder="DD/MM/AAAA"
-                value={vigencia}
-                onChange={handleChangeData(setVigencia)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 outline-none"
-                required
-                maxLength={10}
+                type="text" inputMode="numeric" placeholder="DD/MM/AAAA"
+                value={vigencia} onChange={handleChangeData(setVigencia)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 outline-none"
+                required maxLength={10}
               />
             </div>
 
-            {/* Data do DOE */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Data do DOE *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Data do DOE *</label>
               <input
-                type="text"
-                inputMode="numeric"
-                placeholder="DD/MM/AAAA"
-                value={doe}
-                onChange={handleChangeData(setDoe)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 outline-none"
-                required
-                maxLength={10}
+                type="text" inputMode="numeric" placeholder="DD/MM/AAAA"
+                value={doe} onChange={handleChangeData(setDoe)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 outline-none"
+                required maxLength={10}
               />
             </div>
 
-            {/* Ato */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Identificação do Ato
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Identificação do Ato</label>
               <input
-                type="text"
-                value={ato}
-                onChange={(e) => setAto(e.target.value)}
+                type="text" value={ato} onChange={(e) => setAto(e.target.value)}
                 placeholder="Ex: DOE XX/XX/XXXX - Pág. XX"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 outline-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 outline-none"
               />
             </div>
 
-            {/* É o último? */}
             <div>
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
-                  type="checkbox"
-                  checked={ultimo}
-                  onChange={(e) => setUltimo(e.target.checked)}
+                  type="checkbox" checked={ultimo} onChange={(e) => setUltimo(e.target.checked)}
                   className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-600"
                 />
                 <span className="text-sm font-medium text-gray-700">
@@ -267,50 +216,26 @@ export default function AtsModal({ servidores, onClose, onSave }: AtsModalProps)
               </label>
             </div>
 
-            {/* Continuar cadastrando */}
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
-                  type="checkbox"
-                  checked={continuar}
-                  onChange={(e) => setContinuar(e.target.checked)}
+                  type="checkbox" checked={continuar} onChange={(e) => setContinuar(e.target.checked)}
                   className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-600"
                 />
                 <div>
                   <span className="text-sm font-medium text-blue-900">Continuar cadastrando para o mesmo servidor?</span>
-                  <p className="text-xs text-blue-700 mt-1">
-                    Se marcado, o modal permanecerá aberto e o servidor selecionado será mantido para cadastrar outra vantagem.
-                  </p>
+                  <p className="text-xs text-blue-700 mt-1">O modal permanecerá aberto com o servidor mantido.</p>
                 </div>
               </label>
             </div>
           </div>
 
-          {/* Botões */}
           <div className="flex items-center justify-end gap-4 mt-8 pt-6 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 font-medium rounded-lg transition-colors"
-            >
+            <button type="button" onClick={onClose} className="px-6 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 font-medium rounded-lg">
               Cancelar
             </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-3 bg-green-700 hover:bg-green-800 disabled:bg-green-400 text-white font-medium rounded-lg transition-colors flex items-center"
-            >
-              {loading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Salvando...
-                </>
-              ) : (
-                "Salvar"
-              )}
+            <button type="submit" disabled={loading} className="px-6 py-3 bg-green-700 hover:bg-green-800 disabled:bg-green-400 text-white font-medium rounded-lg flex items-center">
+              {loading ? "Salvando..." : "Salvar"}
             </button>
           </div>
         </form>

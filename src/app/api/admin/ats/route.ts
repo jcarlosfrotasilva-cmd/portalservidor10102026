@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { ats, servers } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { CARGOS_ELEGIVEIS, CATEGORIAS_ELEGIVEIS } from "@/lib/elegibilidade";
 
 async function verifyAdminToken(token: string) {
   try {
@@ -60,29 +59,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Campos obrigatórios não preenchidos" }, { status: 400 });
     }
 
-    // Verificar elegibilidade do servidor
+    // Verificar se servidor existe (sem validar elegibilidade)
     const servidor = await db.select().from(servers).where(eq(servers.id, serverId)).limit(1);
     if (!servidor.length) {
       return NextResponse.json({ error: "Servidor não encontrado" }, { status: 404 });
-    }
-
-    const servidorData = servidor[0];
-    
-    // Validar elegibilidade usando regras atualizadas
-    if (
-      !CARGOS_ELEGIVEIS.ATS.includes(servidorData.cargo) ||
-      !CATEGORIAS_ELEGIVEIS.ATS.includes(servidorData.categoria || "")
-    ) {
-      return NextResponse.json(
-        { 
-          error: "Servidor não é elegível para ATS",
-          detalhe: `Cargo: ${servidorData.cargo} | Categoria: ${servidorData.categoria}`,
-          cargosElegiveis: CARGOS_ELEGIVEIS.ATS,
-          categoriasElegiveis: CATEGORIAS_ELEGIVEIS.ATS,
-          regra: "ATS: Todos servidores efetivos dos cargos AOE, Secretário, PEB I, PEB II, Diretor nas categorias A-EFETIVO e ACT-F"
-        },
-        { status: 400 }
-      );
     }
 
     // Calcular próxima previsão se for o último
@@ -93,7 +73,7 @@ export async function POST(request: NextRequest) {
       proximaPrevisao = proxima.toISOString().split("T")[0];
     }
 
-    // Criar ATS
+    // Criar ATS - SEM RESTRIÇÕES DE ELEGIBILIDADE
     const result = await db
       .insert(ats)
       .values({

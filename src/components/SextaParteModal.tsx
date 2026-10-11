@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { CARGOS_ELEGIVEIS, CATEGORIAS_ELEGIVEIS } from "@/lib/elegibilidade";
 
 interface Servidor {
   id: string;
@@ -26,13 +25,6 @@ export default function SextaParteModal({ servidores, onClose, onSave }: SextaPa
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [token] = useState(() => localStorage.getItem("admin_token") || "");
-
-  const isServidorElegivel = (servidor: Servidor) => {
-    return (
-      CARGOS_ELEGIVEIS.SEXTA_PARTE.includes(servidor.cargo) &&
-      CATEGORIAS_ELEGIVEIS.SEXTA_PARTE.includes(servidor.categoria || "")
-    );
-  };
 
   const formatDataInput = (dateStr: string) => {
     const parts = dateStr.replace(/\D/g, "").match(/(\d{2})(\d{2})(\d{4})/);
@@ -115,9 +107,7 @@ export default function SextaParteModal({ servidores, onClose, onSave }: SextaPa
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Novo Registro de Sexta-Parte</h2>
             {continuar && selectedServidor && (
-              <p className="text-sm text-green-700 mt-1">
-                Servidor mantido: {selectedServidor.nome}
-              </p>
+              <p className="text-sm text-green-700 mt-1">Servidor mantido: {selectedServidor.nome}</p>
             )}
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
@@ -147,16 +137,14 @@ export default function SextaParteModal({ servidores, onClose, onSave }: SextaPa
                 required
               >
                 <option value="">Selecione um servidor</option>
-                {servidores.filter(isServidorElegivel).map((servidor) => (
+                {servidores.map((servidor) => (
                   <option key={servidor.id} value={servidor.id}>
                     {servidor.nome} - {servidor.cargo} ({servidor.categoria})
                   </option>
                 ))}
               </select>
               <p className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-xs font-semibold text-green-900 mb-1">Regra de Elegibilidade Sexta-Parte:</p>
-                <p className="text-xs text-green-800"><strong>Cargos:</strong> AOE, Secretário de Escola, PEB I, PEB II, Diretor de Escola</p>
-                <p className="text-xs text-green-800"><strong>Categorias:</strong> A-EFETIVO, ACT-F</p>
+                <p className="text-xs font-semibold text-green-900">✅ TODOS os servidores são elegíveis para Sexta-Parte</p>
               </p>
             </div>
 
