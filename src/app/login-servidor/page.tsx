@@ -20,12 +20,11 @@ export default function LoginServidorPage() {
       .replace(/(-\d{2})\d+?$/, "$1");
   };
 
+  // FORMATO DDMMAAAA - SEM BARRAS
   const formatDataNasc = (value: string) => {
     return value
-      .replace(/\D/g, "")
-      .replace(/(\d{2})(\d)/, "$1/$2")
-      .replace(/(\d{2})(\d{2})(\d{1,4})/, "$1/$2/$3")
-      .replace(/(\/\d{4})\d+?$/, "$1");
+      .replace(/\D/g, "") // Remove tudo que não é dígito
+      .slice(0, 8); // Limita a 8 dígitos
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -34,10 +33,7 @@ export default function LoginServidorPage() {
     setLoading(true);
 
     try {
-      // Normalizar CPF (remover formatação)
       const cpfLimpo = cpf.replace(/\D/g, "");
-      
-      // Normalizar data de nascimento (remover barras, formato DDMMAAAA)
       const dataNascLimpa = dataNasc.replace(/\D/g, "");
 
       if (cpfLimpo.length !== 11) {
@@ -47,7 +43,7 @@ export default function LoginServidorPage() {
       }
 
       if (dataNascLimpa.length !== 8) {
-        setError("Data de nascimento inválida. Use o formato DD/MM/AAAA.");
+        setError("Data de nascimento inválida. Use 8 dígitos (DDMMAAAA).");
         setLoading(false);
         return;
       }
@@ -69,13 +65,11 @@ export default function LoginServidorPage() {
         return;
       }
 
-      // Salvar token e dados do usuário no localStorage
       if (data.token && data.user) {
         localStorage.setItem("servidor_token", data.token);
         localStorage.setItem("servidor_user", JSON.stringify(data.user));
       }
 
-      // Redirecionar para dashboard do servidor
       router.push("/dashboard/servidor");
     } catch (err) {
       setError("Erro ao conectar. Tente novamente.");
@@ -87,7 +81,6 @@ export default function LoginServidorPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-cream-50 via-white to-green-50 flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
-        {/* Cabeçalho */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
             <p className="text-sm uppercase tracking-[0.15em] text-green-800 font-medium">
@@ -99,7 +92,6 @@ export default function LoginServidorPage() {
           </Link>
         </div>
 
-        {/* Card de Login */}
         <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgba(16,24,40,0.08)] p-8 border border-gray-100">
           <h1 className="text-2xl font-bold text-gray-900 mb-2 text-center">
             Acesso do Servidor
@@ -124,7 +116,6 @@ export default function LoginServidorPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* CPF */}
             <div>
               <label htmlFor="cpf" className="block text-sm font-medium text-gray-700 mb-2">
                 CPF
@@ -142,7 +133,6 @@ export default function LoginServidorPage() {
               />
             </div>
 
-            {/* Data de Nascimento */}
             <div>
               <label htmlFor="dataNasc" className="block text-sm font-medium text-gray-700 mb-2">
                 Data de Nascimento
@@ -151,19 +141,18 @@ export default function LoginServidorPage() {
                 id="dataNasc"
                 type="text"
                 inputMode="numeric"
-                placeholder="DD/MM/AAAA"
+                placeholder="15061966"
                 value={dataNasc}
                 onChange={(e) => setDataNasc(formatDataNasc(e.target.value))}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 outline-none transition-all"
                 required
-                maxLength={10}
+                maxLength={8}
               />
               <p className="mt-1 text-xs text-gray-500">
-                Formato: DD/MM/AAAA
+                Formato: DDMMAAAA (ex: 15061966 = 15/06/1966)
               </p>
             </div>
 
-            {/* Botão de Login */}
             <button
               type="submit"
               disabled={loading}
@@ -199,7 +188,6 @@ export default function LoginServidorPage() {
             </button>
           </form>
 
-          {/* Link de Voltar */}
           <div className="mt-6 text-center">
             <Link
               href="/"
@@ -223,7 +211,6 @@ export default function LoginServidorPage() {
           </div>
         </div>
 
-        {/* Rodapé */}
         <p className="text-center text-xs text-gray-500 mt-8">
           Acesso seguro · Informações protegidas
         </p>
