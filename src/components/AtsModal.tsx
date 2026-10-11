@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatDataInput, formatDataForDatabase, createDataHandler } from "@/lib/dateUtils";
 
 interface Servidor {
   id: string;
@@ -33,23 +34,6 @@ export default function AtsModal({ servidores, onClose, onSave }: AtsModalProps)
     "6º ATS", "7º ATS", "8º ATS", "9º ATS", "10º ATS"
   ];
 
-  const formatDataInput = (dateStr: string) => {
-    const parts = dateStr.replace(/\D/g, "").match(/(\d{2})(\d{2})(\d{4})/);
-    if (parts) {
-      return `${parts[3]}-${parts[2]}-${parts[1]}`;
-    }
-    return dateStr;
-  };
-
-  const handleChangeData = (setter: (value: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value
-      .replace(/\D/g, "")
-      .replace(/(\d{2})(\d)/, "$1/$2")
-      .replace(/(\d{2})(\d{2})(\d{1,4})/, "$1/$2/$3")
-      .replace(/(\/\d{4})\d+?$/, "$1");
-    setter(value);
-  };
-
   const resetForm = () => {
     setTipo("1º ATS");
     setVigencia("");
@@ -77,6 +61,16 @@ export default function AtsModal({ servidores, onClose, onSave }: AtsModalProps)
         return;
       }
 
+      // Validar formato das datas
+      const vigenciaDigits = vigencia.replace(/\D/g, "");
+      const doeDigits = doe.replace(/\D/g, "");
+
+      if (vigenciaDigits.length !== 8 || doeDigits.length !== 8) {
+        setError("Datas devem ter 8 dígitos (DD/MM/AAAA)");
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch("/api/admin/ats", {
         method: "POST",
         headers: {
@@ -86,8 +80,8 @@ export default function AtsModal({ servidores, onClose, onSave }: AtsModalProps)
         body: JSON.stringify({
           serverId: selectedServidor.id,
           tipo,
-          vigencia: formatDataInput(vigencia),
-          doe: formatDataInput(doe),
+          vigencia: formatDataForDatabase(vigencia),
+          doe: formatDataForDatabase(doe),
           ato: ato || null,
           ultimo,
         }),
@@ -178,27 +172,37 @@ export default function AtsModal({ servidores, onClose, onSave }: AtsModalProps)
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Data de Vigência *</label>
               <input
-                type="text" inputMode="numeric" placeholder="DD/MM/AAAA"
-                value={vigencia} onChange={handleChangeData(setVigencia)}
+                type="text"
+                inputMode="numeric"
+                placeholder="DD/MM/AAAA"
+                value={vigencia}
+                onChange={createDataHandler(setVigencia)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 outline-none"
-                required maxLength={10}
+                required
+                maxLength={10}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Data do DOE *</label>
               <input
-                type="text" inputMode="numeric" placeholder="DD/MM/AAAA"
-                value={doe} onChange={handleChangeData(setDoe)}
+                type="text"
+                inputMode="numeric"
+                placeholder="DD/MM/AAAA"
+                value={doe}
+                onChange={createDataHandler(setDoe)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 outline-none"
-                required maxLength={10}
+                required
+                maxLength={10}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Identificação do Ato</label>
               <input
-                type="text" value={ato} onChange={(e) => setAto(e.target.value)}
+                type="text"
+                value={ato}
+                onChange={(e) => setAto(e.target.value)}
                 placeholder="Ex: DOE XX/XX/XXXX - Pág. XX"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 outline-none"
               />
@@ -207,7 +211,9 @@ export default function AtsModal({ servidores, onClose, onSave }: AtsModalProps)
             <div>
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
-                  type="checkbox" checked={ultimo} onChange={(e) => setUltimo(e.target.checked)}
+                  type="checkbox"
+                  checked={ultimo}
+                  onChange={(e) => setUltimo(e.target.checked)}
                   className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-600"
                 />
                 <span className="text-sm font-medium text-gray-700">
@@ -219,7 +225,9 @@ export default function AtsModal({ servidores, onClose, onSave }: AtsModalProps)
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
-                  type="checkbox" checked={continuar} onChange={(e) => setContinuar(e.target.checked)}
+                  type="checkbox"
+                  checked={continuar}
+                  onChange={(e) => setContinuar(e.target.checked)}
                   className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-600"
                 />
                 <div>
@@ -231,10 +239,18 @@ export default function AtsModal({ servidores, onClose, onSave }: AtsModalProps)
           </div>
 
           <div className="flex items-center justify-end gap-4 mt-8 pt-6 border-t border-gray-200">
-            <button type="button" onClick={onClose} className="px-6 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 font-medium rounded-lg">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 font-medium rounded-lg"
+            >
               Cancelar
             </button>
-            <button type="submit" disabled={loading} className="px-6 py-3 bg-green-700 hover:bg-green-800 disabled:bg-green-400 text-white font-medium rounded-lg flex items-center">
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-6 py-3 bg-green-700 hover:bg-green-800 disabled:bg-green-400 text-white font-medium rounded-lg flex items-center"
+            >
               {loading ? "Salvando..." : "Salvar"}
             </button>
           </div>
