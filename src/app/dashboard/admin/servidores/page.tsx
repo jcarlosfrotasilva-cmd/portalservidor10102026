@@ -135,16 +135,30 @@ export default function ServidoresPage() {
               <h1 className="text-2xl font-bold text-gray-900 mt-2">
                 Gerenciamento de Servidores
               </h1>
+              <p className="text-sm text-gray-600 mt-1">
+                Total: {servidores.length} | Ativos: {servidores.filter(s => s.active).length} | Inativos: {servidores.filter(s => !s.active).length}
+              </p>
             </div>
-            <button
-              onClick={() => setShowModal(true)}
-              className="px-4 py-2 bg-green-700 hover:bg-green-800 text-white font-medium rounded-lg transition-colors flex items-center"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Novo Servidor
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => fetchServidores(token)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Atualizar
+              </button>
+              <button
+                onClick={() => setShowModal(true)}
+                className="px-4 py-2 bg-green-700 hover:bg-green-800 text-white font-medium rounded-lg transition-colors flex items-center"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Novo Servidor
+              </button>
+            </div>
           </div>
         </div>
       </header>

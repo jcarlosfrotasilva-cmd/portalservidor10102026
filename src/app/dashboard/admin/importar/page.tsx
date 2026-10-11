@@ -214,12 +214,10 @@ export default function ImportarPage() {
     const result = { success: 0, updated: 0, skipped: 0, errors: 0 };
 
     try {
-      // IMPORTAR TODOS OS REGISTROS, não apenas os 20 da prévia
       const rowsToImport = allRows;
       
       console.log(`Importando ${rowsToImport.length} registros...`);
 
-      // Processar em lotes de 50
       const batches = [];
       for (let i = 0; i < rowsToImport.length; i += 50) {
         batches.push(rowsToImport.slice(i, i + 50));
@@ -255,7 +253,7 @@ export default function ImportarPage() {
                 jornada: row.jornada || null,
                 lotacao: row.lotacao || null,
                 situacao: row.situacao || "ATIVO",
-                active: true, // GARANTIR QUE ESTEJA ATIVO
+                active: true,
               }),
             });
 
@@ -284,6 +282,11 @@ export default function ImportarPage() {
 
       setImportResult(result);
       setImporting(false);
+      
+      // Redirecionar para lista de servidores após 3 segundos
+      setTimeout(() => {
+        router.push("/dashboard/admin/servidores");
+      }, 3000);
     } catch (error) {
       console.error("Erro na importação:", error);
       alert("Erro na importação. Tente novamente.");
