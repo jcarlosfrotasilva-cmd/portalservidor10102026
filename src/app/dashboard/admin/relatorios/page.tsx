@@ -84,9 +84,9 @@ export default function RelatoriosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cream-50 via-white to-green-50">
-      {/* Cabeçalho */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+    <div className="min-h-screen bg-white print:bg-white">
+      {/* Cabeçalho - Não impresso */}
+      <header className="bg-white shadow-sm border-b border-gray-200 print:hidden">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -116,10 +116,25 @@ export default function RelatoriosPage() {
         </div>
       </header>
 
+      {/* Cabeçalho de Impressão - Profissional */}
+      <div className="print:block hidden max-w-7xl mx-auto px-6 py-4 mb-6">
+        <div className="text-center border-b-2 border-gray-800 pb-4">
+          <h1 className="text-2xl font-bold text-gray-900">EE Profª Marlene Frattini</h1>
+          <p className="text-sm text-gray-600 mt-1">Relatório de Servidores</p>
+          <p className="text-xs text-gray-500 mt-2">Gerado em: {new Date().toLocaleDateString("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+          })}</p>
+        </div>
+      </div>
+
       {/* Conteúdo Principal */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* Filtros */}
-        <div className="bg-white rounded-xl shadow-card p-6 mb-6">
+      <main className="max-w-7xl mx-auto px-6 py-8 print:p-0">
+        {/* Filtros - Não impresso */}
+        <div className="bg-white rounded-xl shadow-card p-6 mb-6 print:hidden">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Filtros do Relatório</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -257,4 +272,20 @@ export default function RelatoriosPage() {
 function formatCPF(cpf: string): string {
   const digits = cpf.replace(/\D/g, "");
   return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+}
+
+// Adicionar estilos de impressão
+if (typeof document !== "undefined") {
+  const style = document.createElement("style");
+  style.textContent = `
+    @media print {
+      .print\\:hidden { display: none !important; }
+      .print\\:block { display: block !important; }
+      .print\\:p-0 { padding: 0 !important; }
+      body { background: white !important; }
+      .shadow-card { box-shadow: none !important; border: 1px solid #ddd !important; }
+      button { display: none !important; }
+    }
+  `;
+  document.head.appendChild(style);
 }

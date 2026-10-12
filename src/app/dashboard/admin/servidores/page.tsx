@@ -26,6 +26,7 @@ export default function ServidoresPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingServidor, setEditingServidor] = useState<Servidor | null>(null);
   const [token, setToken] = useState<string>("");
+  const [refreshKey, setRefreshKey] = useState(0); // Forçar refresh
 
   useEffect(() => {
     const adminToken = localStorage.getItem("admin_token");
@@ -35,9 +36,10 @@ export default function ServidoresPage() {
     }
     setToken(adminToken);
     fetchServidores(adminToken);
-  }, [router]);
+  }, [router, refreshKey]);
 
   const fetchServidores = async (authToken: string) => {
+    setLoading(true);
     try {
       const response = await fetch("/api/admin/servidores", {
         headers: {
@@ -56,7 +58,7 @@ export default function ServidoresPage() {
       }
 
       const data = await response.json();
-      setServidores(data.servidores);
+      setServidores(data.servidores || []);
     } catch (error) {
       console.error("Erro ao buscar servidores:", error);
     } finally {
@@ -72,7 +74,8 @@ export default function ServidoresPage() {
   const handleSave = () => {
     setShowModal(false);
     setEditingServidor(null);
-    fetchServidores(token);
+    // Forçar recarregamento do banco
+    setRefreshKey(prev => prev + 1);
   };
 
   const handleDelete = async (id: string) => {
@@ -92,7 +95,8 @@ export default function ServidoresPage() {
         throw new Error("Falha ao desativar servidor");
       }
 
-      setServidores(servidores.filter((s) => s.id !== id));
+      // Forçar recarregamento do banco
+      setRefreshKey(prev => prev + 1);
     } catch (error) {
       console.error("Erro ao desativar servidor:", error);
       alert("Erro ao desativar servidor. Tente novamente.");
@@ -141,7 +145,7 @@ export default function ServidoresPage() {
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => fetchServidores(token)}
+                onClick={() => setRefreshKey(prev => prev + 1)}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center"
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
