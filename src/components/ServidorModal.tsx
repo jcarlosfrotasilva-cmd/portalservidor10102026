@@ -89,13 +89,23 @@ export default function ServidorModal({ servidor, onClose, onSave }: ServidorMod
   };
 
   const formatDataInput = (dateStr: string) => {
-    // Converte DD/MM/AAAA para YYYY-MM-DD
-    const parts = dateStr.replace(/\D/g, "").match(/(\d{2})(\d{2})(\d{4})/);
-    if (parts) {
-      return `${parts[3]}-${parts[2]}-${parts[1]}`;
-    }
+  // Converte DD/MM/AAAA para YYYY-MM-DD
+  const digits = dateStr.replace(/\D/g, "");
+  
+  if (digits.length === 8) {
+    const dia = digits.slice(0, 2);
+    const mes = digits.slice(2, 4);
+    const ano = digits.slice(4, 8);
+    return `${ano}-${mes}-${dia}`;
+  }
+  
+  // Se já estiver no formato YYYY-MM-DD
+  if (dateStr.includes("-") && dateStr.length === 10) {
     return dateStr;
-  };
+  }
+  
+  return dateStr;
+};
 
   const handleChange = (field: string, value: string) => {
     let formatted = value;
