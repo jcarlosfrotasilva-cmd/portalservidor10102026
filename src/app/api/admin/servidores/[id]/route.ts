@@ -5,9 +5,7 @@ import { eq } from "drizzle-orm";
 
 async function verifyAdminToken(token: string) {
   try {
-    if (!token || !token.startsWith("ey")) {
-      return null;
-    }
+    if (!token || !token.startsWith("ey")) return null;
     return true;
   } catch {
     return null;
@@ -23,18 +21,12 @@ export async function PUT(
     const token = authHeader?.replace("Bearer ", "");
 
     if (!token) {
-      return NextResponse.json(
-        { error: "Token de autenticação necessário" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Token necessário" }, { status: 401 });
     }
 
     const isValid = await verifyAdminToken(token);
     if (!isValid) {
-      return NextResponse.json(
-        { error: "Token inválido" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Token inválido" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -59,17 +51,10 @@ export async function PUT(
     } = body;
 
     // Verificar se servidor existe
-    const existing = await db
-      .select()
-      .from(servers)
-      .where(eq(servers.id, id))
-      .limit(1);
+    const existing = await db.select().from(servers).where(eq(servers.id, id)).limit(1);
 
     if (!existing.length) {
-      return NextResponse.json(
-        { error: "Servidor não encontrado" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Servidor não encontrado" }, { status: 404 });
     }
 
     const existingServer = existing[0];
@@ -78,20 +63,13 @@ export async function PUT(
     let cpfLimpo: string | null = null;
     if (cpf && typeof cpf === "string" && cpf.trim() !== "") {
       cpfLimpo = cpf.replace(/\D/g, "");
-      
+
       // Verificar duplicidade (excluindo este servidor)
-      if (cpfLimpo !== existingServer.cpf) {
-        const duplicate = await db
-          .select()
-          .from(servers)
-          .where(eq(servers.cpf, cpfLimpo))
-          .limit(1);
-        
+      if (cpfLimpo !== existingServer.cpf && cpfLimpo.length === 11) {
+        const duplicate = await db.select().from(servers).where(eq(servers.cpf, cpfLimpo)).limit(1);
+
         if (duplicate.length > 0) {
-          return NextResponse.json(
-            { error: "CPF já cadastrado para outro servidor" },
-            { status: 409 }
-          );
+          return NextResponse.json({ error: "CPF já cadastrado para outro servidor" }, { status: 409 });
         }
       }
     }
@@ -111,6 +89,7 @@ export async function PUT(
       cpf: cpfLimpo ?? existingServer.cpf,
       cargo: cargo ?? existingServer.cargo,
       situacao: situacao ?? existingServer.situacao,
+      active: active !== undefined ? active : true,
     };
 
     // Campos opcionais
@@ -125,30 +104,19 @@ export async function PUT(
     if (nivel !== undefined) updateData.nivel = nivel;
     if (jornada !== undefined) updateData.jornada = jornada;
     if (lotacao !== undefined) updateData.lotacao = lotacao;
-    if (active !== undefined) updateData.active = active;
 
     // Atualizar servidor
-    const result = await db
-      .update(servers)
-      .set(updateData)
-      .where(eq(servers.id, id))
-      .returning();
+    const result = await db.update(servers).set(updateData).where(eq(servers.id, id)).returning();
 
     return NextResponse.json({ servidor: result[0] });
   } catch (error: any) {
     console.error("Erro ao atualizar servidor:", error);
-    
+
     if (error.code === "23505") {
-      return NextResponse.json(
-        { error: "CPF já cadastrado" },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: "CPF já cadastrado" }, { status: 409 });
     }
 
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }
 
@@ -161,34 +129,22 @@ export async function DELETE(
     const token = authHeader?.replace("Bearer ", "");
 
     if (!token) {
-      return NextResponse.json(
-        { error: "Token de autenticação necessário" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Token necessário" }, { status: 401 });
     }
 
     const isValid = await verifyAdminToken(token);
     if (!isValid) {
-      return NextResponse.json(
-        { error: "Token inválido" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Token inválido" }, { status: 401 });
     }
 
     const { id } = await params;
 
     // Desativar servidor (não excluir para preservar histórico)
-    await db
-      .update(servers)
-      .set({ active: false })
-      .where(eq(servers.id, id));
+    await db.update(servers).set({ active: false }).where(eq(servers.id, id));
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Erro ao desativar servidor:", error);
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }
