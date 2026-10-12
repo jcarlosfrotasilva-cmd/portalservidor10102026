@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 export const dynamic = "force-dynamic";
 
 export default function HomePage() {
@@ -8,14 +6,12 @@ export default function HomePage() {
       {/* Hero Section com Fotografia */}
       <section className="relative w-full">
         {/* Fotografia Principal */}
-        <div className="relative h-[60vh] md:h-[70vh] w-full overflow-hidden">
-          <Image
-            src="/images/hero-home.jpg"
-            alt="Profissionais educadores em ambiente escolar acolhedor"
-            fill
-            className="object-cover"
-            priority
-          />
+<div className="relative h-[60vh] md:h-[70vh] w-full overflow-hidden">
+            <img
+              src="/images/hero-home.jpg"
+              alt="Profissionais educadores em ambiente escolar acolhedor"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
           {/* Overlay suave para melhorar legibilidade */}
           <div className="absolute inset-0 bg-gradient-to-t from-green-900/30 via-transparent to-transparent" />
         </div>

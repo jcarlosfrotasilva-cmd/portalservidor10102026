@@ -57,15 +57,23 @@ export default function AtsPage() {
 
       if (atsRes.ok) {
         const data = await atsRes.json();
-        setAtsList(data.ats);
+        setAtsList(data.ats || []);
+      } else {
+        console.error("Erro ao buscar ATS:", await atsRes.text());
+        setAtsList([]);
       }
 
       if (servidoresRes.ok) {
         const data = await servidoresRes.json();
-        setServidores(data.servidores);
+        setServidores(data.servidores || []);
+      } else {
+        console.error("Erro ao buscar servidores:", await servidoresRes.text());
+        setServidores([]);
       }
     } catch (error) {
       console.error("Erro ao buscar dados:", error);
+      setAtsList([]);
+      setServidores([]);
     } finally {
       setLoading(false);
     }
@@ -76,16 +84,24 @@ export default function AtsPage() {
     fetchData(token);
   };
 
-  const filteredAts = atsList.filter((ats) =>
-    ats.servidor.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ats.servidor.cargo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ats.tipo.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredAts = atsList.filter((ats) => {
+    if (!ats.servidor) return false;
+    
+    const nomeMatch = ats.servidor.nome?.toLowerCase().includes(searchTerm.toLowerCase());
+    const cargoMatch = ats.servidor.cargo?.toLowerCase().includes(searchTerm.toLowerCase());
+    const tipoMatch = ats.tipo?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return nomeMatch || cargoMatch || tipoMatch;
+  });
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "-";
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("pt-BR");
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString("pt-BR");
+    } catch {
+      return dateStr;
+    }
   };
 
   if (loading) {
@@ -164,7 +180,7 @@ export default function AtsPage() {
           <div className="bg-white rounded-xl shadow-card p-6">
             <p className="text-sm text-gray-600">Servidores com ATS</p>
             <p className="text-3xl font-bold text-blue-700 mt-2">
-              {new Set(atsList.map((a) => a.serverId)).size}
+              {new Set(atsList.filter((a) => a.serverId).map((a) => a.serverId)).size}
             </p>
           </div>
           <div className="bg-white rounded-xl shadow-card p-6">
@@ -195,10 +211,10 @@ export default function AtsPage() {
                   filteredAts.map((ats) => (
                     <tr key={ats.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-4 px-6">
-                        <p className="font-medium text-gray-900">{ats.servidor.nome}</p>
-                        <p className="text-sm text-gray-500">{formatCPF(ats.servidor.cpf)}</p>
+                        <p className="font-medium text-gray-900">{ats.servidor?.nome || "N/A"}</p>
+                        <p className="text-sm text-gray-500">{formatCPF(ats.servidor?.cpf || "")}</p>
                       </td>
-                      <td className="py-4 px-6 text-sm text-gray-700">{ats.servidor.cargo}</td>
+                      <td className="py-4 px-6 text-sm text-gray-700">{ats.servidor?.cargo || "-"}</td>
                       <td className="py-4 px-6">
                         <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
                           {ats.tipo}
@@ -239,10 +255,7 @@ export default function AtsPage() {
         <AtsModal
           servidores={servidores}
           onClose={() => setShowModal(false)}
-          onSave={() => {
-            setShowModal(false);
-            fetchData(token);
-          }}
+          onSave={handleSave}
         />
       )}
     </div>
@@ -250,5 +263,6 @@ export default function AtsPage() {
 }
 
 function formatCPF(cpf: string): string {
-  return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+  const digits = cpf.replace(/\D/g, "");
+  return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
 }
