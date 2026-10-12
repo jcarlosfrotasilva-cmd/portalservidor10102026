@@ -31,6 +31,9 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
+    
+    console.log("PUT request - ID:", id, "Body:", JSON.stringify(body, null, 2));
+
     const {
       nome,
       cpf,
@@ -59,15 +62,18 @@ export async function PUT(
 
     const existingServer = existing[0];
 
-    // Normalizar CPF se for enviado
+    // Normalizar CPF
     let cpfLimpo: string | null = null;
     if (cpf && typeof cpf === "string" && cpf.trim() !== "") {
       cpfLimpo = cpf.replace(/\D/g, "");
+      
+      if (cpfLimpo.length !== 11) {
+        return NextResponse.json({ error: "CPF inválido. Deve conter 11 dígitos." }, { status: 400 });
+      }
 
-      // Verificar duplicidade (excluindo este servidor)
-      if (cpfLimpo !== existingServer.cpf && cpfLimpo.length === 11) {
+      // Verificar duplicidade
+      if (cpfLimpo !== existingServer.cpf) {
         const duplicate = await db.select().from(servers).where(eq(servers.cpf, cpfLimpo)).limit(1);
-
         if (duplicate.length > 0) {
           return NextResponse.json({ error: "CPF já cadastrado para outro servidor" }, { status: 409 });
         }
@@ -83,13 +89,13 @@ export async function PUT(
       }
     }
 
-    // Construir objeto de atualização
+    // Construir objeto de atualização - SEMPRE FORÇAR active: true
     const updateData: Record<string, any> = {
       nome: nome ?? existingServer.nome,
       cpf: cpfLimpo ?? existingServer.cpf,
       cargo: cargo ?? existingServer.cargo,
-      situacao: situacao ?? existingServer.situacao,
-      active: active !== undefined ? active : true,
+      situacao: situacao ?? "ATIVO",
+      active: true, // SEMPRE ATIVO
     };
 
     // Campos opcionais
@@ -105,10 +111,18 @@ export async function PUT(
     if (jornada !== undefined) updateData.jornada = jornada;
     if (lotacao !== undefined) updateData.lotacao = lotacao;
 
-    // Atualizar servidor
-    const result = await db.update(servers).set(updateData).where(eq(servers.id, id)).returning();
+    console.log("Update data:", JSON.stringify(updateData, null, 2));
 
-    return NextResponse.json({ servidor: result[0] });
+    // Atualizar servidor
+    const result = await db
+      .update(servers)
+      .set(updateData)
+      .where(eq(servers.id, id))
+      .returning();
+
+    console.log("Update result:", JSON.stringify(result, null, 2));
+
+    return NextResponse.json({ servidor: result[0], success: true });
   } catch (error: any) {
     console.error("Erro ao atualizar servidor:", error);
 
@@ -116,7 +130,7 @@ export async function PUT(
       return NextResponse.json({ error: "CPF já cadastrado" }, { status: 409 });
     }
 
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+    return NextResponse.json({ error: "Erro interno: " + error.message }, { status: 500 });
   }
 }
 
@@ -139,7 +153,7 @@ export async function DELETE(
 
     const { id } = await params;
 
-    // Desativar servidor (não excluir para preservar histórico)
+    // Desativar servidor
     await db.update(servers).set({ active: false }).where(eq(servers.id, id));
 
     return NextResponse.json({ success: true });
